@@ -1,106 +1,44 @@
-# A loader system program
-import re
-import string
+### Overview
+This program reads a file named "HTE.txt" that contains hexadecimal data. It translates this data into a memory representation, converting between hexadecimal and decimal formats, and outputs the results in a structured manner. The code handles various aspects of memory addressing and opcode representation.
 
+### Key Functions
 
-def stringtoInt(String):
-    return int(String)
+1. **stringtoInt(String)**: 
+   - Converts a string representation of a number into an integer using Python's built-in `int()` function.
 
+2. **hextoDec(hexaString)**: 
+   - Converts a hexadecimal string to decimal using `int()` with base 16.
 
-def hextoDec(hexaString):
-    return int(hexaString, 16)
+3. **dectoHex(decimal)**: 
+   - Converts a decimal integer to a hexadecimal string. The result is formatted to uppercase and excludes the "0x" prefix.
 
+### Main Functionality
 
-def dectoHex(decimal):
-    Hexa = hex(decimal)[2:].upper()
-    return Hexa
+- **Main Variables**: 
+   - Several lists are initialized to store different components such as `VectorFile`, `OpcodeByte`, `MemoryAddress`, `OpcodeMemory`, `OpLength`, `Header`, `Text`, and `End`.
 
+- **File Reading**:
+   - The program opens "HTE.txt" and reads its content into the `VectorFile` list, stripping newline characters for clean processing.
 
-def main():
-    VectorFile = []
-    OpcodeByte = []
-    MemoryAddress = []
-    OpcodeMemory = []
-    OpLength = []
-    Header = ""
-    Text = []
-    End = ""
+- **Header Processing**:
+   - The first line of the file is treated as a header. The program extracts the starting memory address and the length of the memory segment from the header, converting these values from hexadecimal to decimal and back to hexadecimal as needed.
 
-    # Read the file content
-    with open("HTE.txt", "r") as myfile:
-        VectorFile = myfile.readlines()
+- **Opcode Extraction**:
+   - The program processes each line of the input file (except the first and last) to extract opcodes and their respective lengths. It populates `OpcodeMemory` and `OpcodeByte` with this information.
 
-    VectorFile = [line.strip() for line in VectorFile]
+- **Memory Address Generation**:
+   - The program generates memory addresses from the start address to the end address, incrementing by one. It checks conditions to determine when to print opcodes, "xx" for unassigned memory, or formatted memory addresses.
 
-    Header = VectorFile[0]
-    MemoryAddress.append(dectoHex(hextoDec(Header[7:13])))
-    startLength = hextoDec(MemoryAddress[0])
+- **Output Formatting**:
+   - The program prints the memory addresses and their corresponding opcodes or "xx" based on the computed conditions. It also formats the output with tabs for better readability.
 
-    if len(MemoryAddress[0]) < 4:
-        zeros = "0" * (4 - len(MemoryAddress[0]))
-        MemoryAddress[0] = zeros + MemoryAddress[0]
+### Loop Logic
+- The loops manage the flow of processing:
+   - The first loop iterates through the lines of the file to extract opcodes.
+   - The second loop iterates through the memory addresses, checking conditions to determine what to print for each address.
 
-    length = dectoHex(hextoDec(Header[13:19]))
-    memoryLength = hextoDec(length)
+### Ending Condition
+- After processing the main memory segment, the program handles the remainder of memory by printing "xx" for any addresses that fall beyond the end of the defined segment.
 
-    End = VectorFile[-1]
-    endLength = startLength + memoryLength
-
-    for i in range(1, len(VectorFile) - 1):
-        Text.append(VectorFile[i])
-
-    for i in range(len(Text)):
-        byteCounter = 0
-        OpcodeMemory.append(dectoHex(hextoDec(Text[i][1:7])))
-        OpLength.append(hextoDec(Text[i][7:9]))
-
-        for j in range(OpLength[-1]):
-            OpcodeByte.append(Text[i][9 + byteCounter:11 + byteCounter])
-            byteCounter += 2
-
-    totalLength = sum(OpLength)
-    z = 0
-    j = 0
-    remainder = hextoDec(dectoHex(endLength)[:3] + "F") - endLength
-
-    for i in range(startLength, endLength + 1):
-        MemoryAddress.append(dectoHex(i + 1))
-
-        if (hextoDec(MemoryAddress[i - startLength]) % 16 == 0 and
-                (OpcodeMemory[z][:3] + "F" >= MemoryAddress[i - startLength] >= OpcodeMemory[z][:3] + "0")):
-            if len(MemoryAddress[i - startLength]) == 0:
-                print("0000" + MemoryAddress[i - startLength], end='\t')
-            elif len(MemoryAddress[i - startLength]) == 1:
-                print("000" + MemoryAddress[i - startLength], end='\t')
-            elif len(MemoryAddress[i - startLength]) == 2:
-                print("00" + MemoryAddress[i - startLength], end='\t')
-            elif len(MemoryAddress[i - startLength]) == 3:
-                print("0" + MemoryAddress[i - startLength], end='\t')
-            else:
-                print(MemoryAddress[i - startLength], end='\t')
-
-        if (hextoDec(MemoryAddress[i - startLength]) >= hextoDec(OpcodeMemory[z]) and
-                hextoDec(MemoryAddress[i - startLength]) < hextoDec(OpcodeMemory[z]) + OpLength[z]):
-            print(OpcodeByte[j], end='')
-            if (hextoDec(MemoryAddress[i - startLength]) + 1 == hextoDec(OpcodeMemory[z]) + OpLength[z] and
-                    z < len(OpcodeMemory) - 1):
-                z += 1
-            j += 1
-        else:
-            rem = hextoDec(MemoryAddress[i - startLength][:3] + "F") - hextoDec(MemoryAddress[i - startLength])
-            if 0 < rem <= 15:
-                print("xx", end='')
-            elif rem == 0:
-                print("xx\n", end='')
-
-        if hextoDec(MemoryAddress[i - startLength + 1]) % 4 == 0:
-            print('\t', end='')
-
-    for i in range(endLength + 1, endLength + remainder + 1):
-        if i % 4 == 0:
-            print('\t', end='')
-        print("xx", end='')
-
-
-if __name__ == "__main__":
-    main()
+### Conclusion
+This loader system program is useful for interpreting loaded hexadecimal data into a structured memory format, making it easier to visualize how opcodes are organized in memory. It can be further enhanced with error handling and more robust input validation depending on the application's needs.
